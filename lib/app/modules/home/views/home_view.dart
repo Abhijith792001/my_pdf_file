@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:my_pdf_files/app/controllers/file_controller.dart';
 import '../controllers/home_controller.dart';
 
@@ -381,8 +380,8 @@ class HomeView extends GetView<HomeController> {
       textCancel: "Cancel",
       onConfirm: () {
         if (nameController.text.isNotEmpty) {
-          Get.back(); // Close dialog
-          fileController.createFolder(nameController.text);
+          Get.back();
+          fileController.createFolder(folderName: nameController.text);
         }
       },
     );

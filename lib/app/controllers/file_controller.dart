@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
+import '../modules/home/views/folder_picker_view.dart';
 
 class FileController extends GetxController {
   RxList<FileSystemEntity> fileList = <FileSystemEntity>[].obs; // For Browser
@@ -18,14 +20,35 @@ class FileController extends GetxController {
   RxBool isMoveMode = false.obs; // true = Move, false = Copy
 
   static const String appDirectoryName = "PDFManager";
-  String get appPath => "/storage/emulated/0/$appDirectoryName";
+  String get rootPath => "/storage/emulated/0";
+  String get appPath => "$rootPath/$appDirectoryName";
 
-  RxString currentPath = "/storage/emulated/0".obs;
+  RxString currentPath = "/storage/emulated/0".obs; // Initialize to root
 
   @override
   void onInit() {
     super.onInit();
     requestPermission();
+  }
+
+  // ... (permission logic remains same)
+
+  // ...
+
+  void navigateTo(String path) {
+    currentPath.value = path;
+    fetchCurrentDirectory();
+  }
+
+  void navigateUp() {
+    if (currentPath.value == rootPath) return; // Stop at root
+
+    final parent = Directory(currentPath.value).parent;
+    // Extra safety: Ensure we don't go above root path length
+    if (parent.path.length < rootPath.length) return;
+
+    currentPath.value = parent.path;
+    fetchCurrentDirectory();
   }
 
   Future<void> requestPermission() async {
@@ -68,7 +91,7 @@ class FileController extends GetxController {
 
   void _refreshAllData() {
     fetchCurrentDirectory();
-    _fetchAppFiles();
+    fetchAppFiles();
     _fetchRecentPdfsBackground();
   }
 
@@ -83,7 +106,7 @@ class FileController extends GetxController {
     }
   }
 
-  Future<void> _fetchAppFiles() async {
+  Future<void> fetchAppFiles() async {
     try {
       final dir = Directory(appPath);
       if (await dir.exists()) {
@@ -147,19 +170,6 @@ class FileController extends GetxController {
     }
   }
 
-  void navigateTo(String path) {
-    currentPath.value = path;
-    fetchCurrentDirectory();
-  }
-
-  void navigateUp() {
-    if (currentPath.value == appPath)
-      return; // Don't go above app root (optional constraint)
-    final parent = Directory(currentPath.value).parent;
-    currentPath.value = parent.path;
-    fetchCurrentDirectory();
-  }
-
   // Background scan for "Recent Files" (All PDFs)
   Future<void> _fetchRecentPdfsBackground() async {
     try {
@@ -204,15 +214,28 @@ class FileController extends GetxController {
     }
   }
 
-  Future<void> createFolder(String folderName) async {
+  Future<void> createFolder({
+    required String folderName,
+    String? parentPath,
+  }) async {
     try {
-      // Create in current browsing directory
-      final String path = "${currentPath.value}/$folderName";
+      // Create in specific path or current browsing directory
+      final String basePath = parentPath ?? currentPath.value;
+      final String path = "$basePath/$folderName";
       final Directory newDir = Directory(path);
       if (!await newDir.exists()) {
         await newDir.create(recursive: true);
         Get.snackbar("Success", "Folder '$folderName' created!");
-        fetchCurrentDirectory();
+
+        // Refresh only if we are viewing that directory in the main browser
+        if (basePath == currentPath.value) {
+          fetchCurrentDirectory();
+        }
+
+        // Refresh Home Page list if we modified the App Directory
+        if (basePath == appPath) {
+          fetchAppFiles();
+        }
       } else {
         Get.snackbar("Error", "Folder already exists.");
       }
@@ -301,13 +324,86 @@ class FileController extends GetxController {
     }
   }
 
-  void copyToClipboard(FileSystemEntity item, {required bool isMove}) {
+  void copyToClipboard(
+    FileSystemEntity item, {
+    required bool isMove,
+    bool restricted = false,
+  }) {
     clipboardItem.value = item;
     isMoveMode.value = isMove;
-    Get.snackbar(
-      isMove ? "Move" : "Copy",
-      "Item selected. Go to destination and paste.",
-    );
+
+    if (restricted) {
+      // Automatically open Picker restricted to appPath (PDFManager)
+      Get.to(
+        () => FolderPickerView(
+          path: appPath, // Start at root of PDFManager
+          title: appDirectoryName,
+        ),
+      );
+      Get.snackbar(
+        isMove ? "Move" : "Copy",
+        "Select destination folder in PDFManager",
+      );
+    } else {
+      // Unrestricted: User manually navigates to destination
+      Get.snackbar(
+        isMove ? "Move" : "Copy",
+        "Item selected. Go to destination and paste.",
+      );
+    }
+  }
+
+  Widget getFileIcon(String path) {
+    if (FileSystemEntity.isDirectorySync(path)) {
+      return const Icon(Icons.folder, color: Colors.orange);
+    }
+
+    final ext = path.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return const Icon(Icons.picture_as_pdf, color: Colors.red);
+      case 'doc':
+      case 'docx':
+      case 'txt':
+        return const Icon(Icons.description, color: Colors.blue);
+      case 'xls':
+      case 'xlsx':
+        return const Icon(Icons.table_chart, color: Colors.green);
+      case 'ppt':
+      case 'pptx':
+        return const Icon(Icons.slideshow, color: Colors.orangeAccent);
+      default:
+        return const Icon(Icons.insert_drive_file, color: Colors.grey);
+    }
+  }
+
+  // Filter Logic
+  RxString selectedFilter = "All".obs;
+
+  List<FileSystemEntity> get filteredFiles {
+    if (selectedFilter.value == "All") {
+      return recentFiles;
+    }
+    return recentFiles.where((file) {
+      if (file is File) {
+        final ext = file.path.split('.').last.toLowerCase();
+        switch (selectedFilter.value) {
+          case 'PDF':
+            return ext == 'pdf';
+          case 'Word':
+            return ['doc', 'docx'].contains(ext);
+          case 'Excel':
+            return ['xls', 'xlsx'].contains(ext);
+          case 'PPT':
+            return ['ppt', 'pptx'].contains(ext);
+          case 'Text':
+            return ext == 'txt';
+          default:
+            return false;
+        }
+      }
+      return false;
+    }).toList();
   }
 
   Future<void> pasteItem(String destinationFolder) async {
@@ -320,22 +416,27 @@ class FileController extends GetxController {
 
       if (item.path == newPath) {
         Get.snackbar("Error", "Source and destination are the same");
+        // Even if fail, maybe we shouldn't clear? But if user is confused, maybe clear?
+        // Let's keep it if error.
         return;
       }
 
       if (isMoveMode.value) {
         await item.rename(newPath);
-        clipboardItem.value = null; // Clear clipboard after move
         Get.snackbar("Success", "Moved to $newPath");
       } else {
         if (item is File) {
           await item.copy(newPath);
         } else if (item is Directory) {
-          // Simple directory copy logic (recursive)
           await _copyDirectory(item, Directory(newPath));
         }
         Get.snackbar("Success", "Copied to $newPath");
       }
+
+      // FIX: Clear clipboard after successful paste (Move OR Copy)
+      // as per user request to stop showing "Paste Here"
+      clipboardItem.value = null;
+
       _refreshAllData();
     } catch (e) {
       Get.snackbar("Error", "Failed to paste: $e");

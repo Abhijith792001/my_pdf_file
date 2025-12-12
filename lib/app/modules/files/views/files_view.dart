@@ -99,13 +99,13 @@ class FilesView extends GetView<FileController> {
               ),
             ],
           ),
-          // Paste FAB
+          // Paste FAB (Unrestricted - only in standard Files View)
           if (controller.clipboardItem.value != null)
             Positioned(
               bottom: 16,
               right: 16,
               child: FloatingActionButton.extended(
-                heroTag: "files_view_paste", // Unique tag to avoid conflicts
+                heroTag: "files_view_paste",
                 onPressed: () =>
                     controller.pasteItem(controller.currentPath.value),
                 label: const Text("Paste Here"),
@@ -122,10 +122,14 @@ class FilesView extends GetView<FileController> {
       onSelected: (value) {
         switch (value) {
           case 'move':
-            controller.copyToClipboard(entity, isMove: true);
+            controller.copyToClipboard(entity, isMove: true, restricted: false);
             break;
           case 'copy':
-            controller.copyToClipboard(entity, isMove: false);
+            controller.copyToClipboard(
+              entity,
+              isMove: false,
+              restricted: false,
+            );
             break;
           case 'delete':
             controller.deleteFile(entity);

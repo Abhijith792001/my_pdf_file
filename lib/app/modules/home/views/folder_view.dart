@@ -99,10 +99,14 @@ class FolderView extends StatelessWidget {
       onSelected: (value) {
         switch (value) {
           case 'move':
-            controller.copyToClipboard(entity, isMove: true);
+            controller.copyToClipboard(entity, isMove: true, restricted: false);
             break;
           case 'copy':
-            controller.copyToClipboard(entity, isMove: false);
+            controller.copyToClipboard(
+              entity,
+              isMove: false,
+              restricted: false,
+            );
             break;
           case 'delete':
             controller.deleteFile(entity);
