@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:get/get.dart';
 import 'package:pdfrx/pdfrx.dart';
 
@@ -15,6 +16,15 @@ class ViewerController extends GetxController {
     if (filePath.isEmpty) {
       Get.snackbar("Error", "No file selected");
       Get.back();
+      return;
+    }
+
+    // Check if file exists to solve "id not working" issue if path is bad
+    final file = File(filePath);
+    if (!file.existsSync()) {
+      Get.snackbar("Error", "File does not exist: $filePath");
+      Get.back();
+      return;
     }
   }
 
