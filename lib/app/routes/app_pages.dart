@@ -8,6 +8,8 @@ import '../modules/editor/bindings/editor_binding.dart';
 import '../modules/editor/views/editor_view.dart';
 import '../modules/tools/bindings/tools_binding.dart';
 import '../modules/tools/views/tools_view.dart';
+import '../modules/chat/bindings/chat_binding.dart';
+import '../modules/chat/views/chat_view.dart';
 
 part 'app_routes.dart';
 
@@ -36,6 +38,11 @@ class AppPages {
       name: _Paths.TOOLS,
       page: () => const ToolsView(),
       binding: ToolsBinding(),
+    ),
+    GetPage(
+      name: _Paths.CHAT,
+      page: () => const ChatView(),
+      binding: ChatBinding(),
     ),
   ];
 }

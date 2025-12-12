@@ -13,10 +13,13 @@ class ViewerView extends GetView<ViewerController> {
       appBar: AppBar(
         title: Text(controller.filePath.split('/').last),
         actions: [
-            IconButton(icon: const Icon(Icons.edit), onPressed: () {
-                // Navigate to Editor
-                Get.toNamed('/editor', arguments: controller.filePath);
-            }),
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              // Navigate to Editor
+              Get.toNamed('/editor', arguments: controller.filePath);
+            },
+          ),
         ],
       ),
       body: Stack(
@@ -31,7 +34,7 @@ class ViewerView extends GetView<ViewerController> {
               },
               onPageChanged: (page) {
                 if (page != null) {
-                    controller.onPageChanged(page, controller.totalPages.value);
+                  controller.onPageChanged(page, controller.totalPages.value);
                 }
               },
             ),
@@ -40,23 +43,34 @@ class ViewerView extends GetView<ViewerController> {
             bottom: 20,
             left: 0,
             right: 0,
-            child: Obx(() => controller.isReady.value
-                ? Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
+            child: Obx(
+              () => controller.isReady.value
+                  ? Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "${controller.currentPage}/${controller.totalPages}",
+                          style: const TextStyle(color: Colors.white),
+                        ),
                       ),
-                      child: Text(
-                        "${controller.currentPage}/${controller.totalPages}",
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  )
-                : const SizedBox.shrink()),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Get.toNamed('/chat', arguments: controller.filePath);
+        },
+        child: const Icon(Icons.chat_bubble_outline),
       ),
     );
   }

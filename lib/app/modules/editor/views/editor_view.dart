@@ -18,14 +18,28 @@ class EditorView extends GetView<EditorController> {
             icon: const Icon(Icons.undo),
             onPressed: controller.clearBoard,
           ),
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.save),
-            onPressed: () {
-              Get.snackbar(
-                "Info",
-                "Save feature implemented in File Controller",
-              );
+            onSelected: (value) {
+              if (value == 'save') {
+                controller.saveFile();
+              } else if (value == 'save_as') {
+                controller.saveAsFile();
+              } else if (value == 'convert_word') {
+                controller.convertToWord();
+              }
             },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(value: 'save', child: Text('Save')),
+              const PopupMenuItem<String>(
+                value: 'save_as',
+                child: Text('Save As...'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'convert_word',
+                child: Text('Convert to Word'),
+              ),
+            ],
           ),
         ],
       ),

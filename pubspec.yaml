@@ -43,6 +43,8 @@ dependencies:
   image_picker: ^1.2.1
   pdf: ^3.11.3
   flutter_svg: ^2.2.3
+  google_generative_ai: ^0.4.7
+  open_file: ^3.5.10
 
 dev_dependencies:
   flutter_test:
